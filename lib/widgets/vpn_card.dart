@@ -66,7 +66,7 @@ class VpnCard extends StatelessWidget {
             //subtitle
             subtitle: Row(
               children: [
-                Icon(Icons.speed_rounded, color: Colors.blue, size: 20),
+                Icon(Icons.speed_rounded, color: Colors.teal, size: 20),
                 SizedBox(width: 4),
                 Text(_formatBytes(vpn.speed, 1), style: TextStyle(fontSize: 13))
               ],
@@ -82,7 +82,7 @@ class VpnCard extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                         color: Theme.of(context).lightText)),
                 SizedBox(width: 4),
-                Icon(CupertinoIcons.person_3, color: Colors.blue),
+                Icon(CupertinoIcons.person_3, color: Colors.red),
               ],
             ),
           ),

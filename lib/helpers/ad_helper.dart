@@ -7,6 +7,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../controllers/native_ad_controller.dart';
 import 'config.dart';
 import 'my_dialogs.dart';
+import 'analytics_helper.dart';
 
 class AdHelper {
   // for initializing ads sdk
@@ -78,6 +79,7 @@ class AdHelper {
         _resetInterstitialAd();
         precacheInterstitialAd();
       });
+      AnalyticsHelper.logAdImpression('interstitial');
       _interstitialAd?.show();
       return;
     }
@@ -105,6 +107,7 @@ class AdHelper {
             precacheInterstitialAd();
           });
           Get.back();
+          AnalyticsHelper.logAdImpression('interstitial');
           ad.show();
         },
         onAdFailedToLoad: (err) {
@@ -199,6 +202,7 @@ class AdHelper {
           Get.back();
 
           //reward listener
+          AnalyticsHelper.logAdImpression('rewarded');
           ad.show(
               onUserEarnedReward: (AdWithoutView ad, RewardItem rewardItem) {
             onComplete();

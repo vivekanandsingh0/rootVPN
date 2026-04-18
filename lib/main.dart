@@ -7,6 +7,7 @@ import 'helpers/ad_helper.dart';
 import 'helpers/config.dart';
 import 'helpers/pref.dart';
 import 'screens/splash_screen.dart';
+import 'package:posthog_flutter/posthog_flutter.dart';
 
 //global object for accessing device screen size
 late Size mq;
@@ -40,22 +41,35 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'OpenVpn Demo',
+      title: 'Root VPN',
       home: SplashScreen(),
+      navigatorObservers: [PosthogObserver()],
 
       //theme
       theme: ThemeData(
-        appBarTheme: AppBarTheme(centerTitle: true, elevation: 3),
         useMaterial3: false,
+        primarySwatch: Colors.red,
+        appBarTheme: AppBarTheme(
+          centerTitle: true,
+          elevation: 3,
+          backgroundColor: Colors.red,
+          foregroundColor: Colors.white,
+        ),
       ),
 
       themeMode: Pref.isDarkMode ? ThemeMode.dark : ThemeMode.light,
 
       //dark theme
       darkTheme: ThemeData(
-          brightness: Brightness.dark,
-          useMaterial3: false,
-          appBarTheme: AppBarTheme(centerTitle: true, elevation: 3)),
+        brightness: Brightness.dark,
+        useMaterial3: false,
+        primarySwatch: Colors.red,
+        appBarTheme: AppBarTheme(
+          centerTitle: true,
+          elevation: 3,
+          backgroundColor: Colors.red.shade900,
+        ),
+      ),
 
       debugShowCheckedModeBanner: false,
     );
@@ -64,5 +78,5 @@ class MyApp extends StatelessWidget {
 
 extension AppTheme on ThemeData {
   Color get lightText => Pref.isDarkMode ? Colors.white70 : Colors.black54;
-  Color get bottomNav => Pref.isDarkMode ? Colors.white12 : Colors.blue;
+  Color get bottomNav => Pref.isDarkMode ? Colors.white12 : Colors.red;
 }

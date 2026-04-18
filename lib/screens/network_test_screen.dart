@@ -45,7 +45,7 @@ class NetworkTestScreen extends StatelessWidget {
                       title: 'IP Address',
                       subtitle: ipData.value.query,
                       icon: Icon(CupertinoIcons.location_solid,
-                          color: Colors.blue))),
+                          color: Colors.red))),
 
               //isp
               NetworkCard(

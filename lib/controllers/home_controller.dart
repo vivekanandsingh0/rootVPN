@@ -9,6 +9,7 @@ import '../helpers/pref.dart';
 import '../models/vpn.dart';
 import '../models/vpn_config.dart';
 import '../services/vpn_engine.dart';
+import '../helpers/analytics_helper.dart';
 
 class HomeController extends GetxController {
   final Rx<Vpn> vpn = Pref.vpn.obs;
@@ -20,6 +21,13 @@ class HomeController extends GetxController {
     super.onInit();
     VpnEngine.vpnStageSnapshot().listen((event) {
       vpnState.value = event;
+      
+      // Log connection results
+      if (event == VpnEngine.vpnConnected) {
+        AnalyticsHelper.logVpnConnectionSuccess(vpn.value.countryLong, vpn.value.countryShort);
+      } else if (event == VpnEngine.vpnDisconnected && vpnState.value != VpnEngine.vpnDisconnected) {
+          // This might be a failure if it was connecting and now disconnected
+      }
     });
   }
 
@@ -43,6 +51,7 @@ class HomeController extends GetxController {
           config: config);
 
       AdHelper.showInterstitialAd(onComplete: () async {
+        AnalyticsHelper.logVpnConnectionAttempt(vpn.value.countryLong, vpn.value.countryShort);
         await VpnEngine.startVpn(vpnConfig);
       });
     } else {

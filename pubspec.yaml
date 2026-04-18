@@ -41,6 +41,7 @@ dependencies:
 
   # For Remote Config
   firebase_remote_config: ^5.4.2
+  posthog_flutter: ^5.23.2
 
 
 dev_dependencies:
@@ -52,6 +53,14 @@ dev_dependencies:
 
   # Encourages good practices
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/root-vpn.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/root-vpn.png"
 
 flutter:
   # Enabling material design
