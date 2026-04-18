@@ -6,7 +6,9 @@
 package de.blinkt.openvpn.core;
 
 import android.annotation.SuppressLint;
+import android.os.Handler;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -56,7 +58,8 @@ public class OpenVPNThread implements Runnable {
     }
 
     public void stopProcess() {
-        mProcess.destroy();
+        if (mProcess != null)
+            mProcess.destroy();
     }
 
     void setReplaceConnection()
@@ -73,6 +76,13 @@ public class OpenVPNThread implements Runnable {
         } catch (Exception e) {
             VpnStatus.logException("Starting OpenVPN Thread", e);
             Log.e(TAG, "OpenVPNThread Got " + e.toString());
+            if (mArgv != null && mArgv.length > 0) {
+                final String binaryPath = mArgv[0];
+                final String errorMsg = e.getMessage();
+                new Handler(mService.getMainLooper()).post(() -> {
+                    Toast.makeText(mService, "Binary Error: " + errorMsg + "\nPath: " + binaryPath, Toast.LENGTH_LONG).show();
+                });
+            }
         } finally {
             int exitvalue = 0;
             try {
@@ -126,7 +136,8 @@ public class OpenVPNThread implements Runnable {
 
     public static boolean stop(){
         mService.openvpnStopped();
-        mProcess.destroy();
+        if (mProcess != null)
+            mProcess.destroy();
         return true;
     }
 

@@ -40,6 +40,13 @@ class VpnEngine {
   static Future<void> stopVpn() =>
       MethodChannel(_methodChannelVpnControl).invokeMethod("stop");
 
+  ///Get VPN Logs
+  static Future<List<String>> getVpnLogs() async {
+    final List<dynamic> logs =
+        await MethodChannel(_methodChannelVpnControl).invokeMethod("getLogs");
+    return logs.cast<String>();
+  }
+
   ///Open VPN Settings
   static Future<void> openKillSwitch() =>
       MethodChannel(_methodChannelVpnControl).invokeMethod("kill_switch");

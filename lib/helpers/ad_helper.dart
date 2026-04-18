@@ -64,8 +64,21 @@ class AdHelper {
     }
 
     if (_interstitialAdLoaded && _interstitialAd != null) {
+      _interstitialAd?.fullScreenContentCallback =
+          FullScreenContentCallback(onAdDismissedFullScreenContent: (ad) {
+        Future.delayed(Duration(milliseconds: 500), () {
+          onComplete();
+        });
+        _resetInterstitialAd();
+        precacheInterstitialAd();
+      }, onAdFailedToShowFullScreenContent: (ad, err) {
+        Future.delayed(Duration(milliseconds: 500), () {
+          onComplete();
+        });
+        _resetInterstitialAd();
+        precacheInterstitialAd();
+      });
       _interstitialAd?.show();
-      onComplete();
       return;
     }
 
@@ -79,7 +92,15 @@ class AdHelper {
           //ad listener
           ad.fullScreenContentCallback =
               FullScreenContentCallback(onAdDismissedFullScreenContent: (ad) {
-            onComplete();
+            Future.delayed(Duration(milliseconds: 500), () {
+              onComplete();
+            });
+            _resetInterstitialAd();
+            precacheInterstitialAd();
+          }, onAdFailedToShowFullScreenContent: (ad, err) {
+            Future.delayed(Duration(milliseconds: 500), () {
+              onComplete();
+            });
             _resetInterstitialAd();
             precacheInterstitialAd();
           });

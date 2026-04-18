@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../controllers/home_controller.dart';
@@ -24,17 +25,49 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     mq = MediaQuery.sizeOf(context);
 
-    ///Add listener to update vpn state
-    VpnEngine.vpnStageSnapshot().listen((event) {
-      _controller.vpnState.value = event;
-    });
-
     return Scaffold(
       //app bar
       appBar: AppBar(
         leading: Icon(CupertinoIcons.home),
         title: Text('Free OpenVPN'),
         actions: [
+          IconButton(
+            onPressed: () async {
+              final logs = await VpnEngine.getVpnLogs();
+              Get.dialog(
+                AlertDialog(
+                  title: Text('VPN Debug Logs'),
+                  content: SizedBox(
+                    width: double.maxFinite,
+                    child: ListView.builder(
+                      itemCount: logs.length,
+                      itemBuilder: (context, index) => Text(
+                        logs[index],
+                        style: TextStyle(fontSize: 12, color: Colors.black87),
+                      ),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: logs.join('\n')));
+                        Get.snackbar('Success', 'Logs copied to clipboard',
+                            snackPosition: SnackPosition.BOTTOM,
+                            backgroundColor: Colors.white,
+                            colorText: Colors.blue);
+                      },
+                      child: Text('Copy'),
+                    ),
+                    TextButton(
+                      onPressed: () => Get.back(),
+                      child: Text('Close'),
+                    )
+                  ],
+                ),
+              );
+            },
+            icon: Icon(Icons.bug_report_outlined, size: 26),
+          ),
           IconButton(
               onPressed: () {
                 //ad dialog

@@ -23,13 +23,16 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.List;
 
 import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.core.ConfigParser;
+import de.blinkt.openvpn.core.LogItem;
 import de.blinkt.openvpn.core.OpenVPNService;
 import de.blinkt.openvpn.core.OpenVPNThread;
 import de.blinkt.openvpn.core.ProfileManager;
 import de.blinkt.openvpn.core.VPNLaunchHelper;
+import de.blinkt.openvpn.core.VpnStatus;
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.EventChannel;
@@ -157,7 +160,17 @@ public class MainActivity extends FlutterActivity {
                 case "stop":
                     OpenVPNThread.stop();
                     setStage("disconnected");
+                    result.success(null);
                     break;
+
+                case "getLogs":
+                    List<String> logs = new ArrayList<>();
+                    for (LogItem item : VpnStatus.getlogbuffer()) {
+                        logs.add(item.getString(this));
+                    }
+                    result.success(logs);
+                    break;
+
                 case "start":
                     config = call.argument("config");
                     name = call.argument("country");
@@ -171,16 +184,20 @@ public class MainActivity extends FlutterActivity {
 
                     if (config == null || name == null) {
                         Log.e(TAG, "Config not valid!");
+                        result.error("INVALID_CONFIG", "Config or Country name is null", null);
                         return;
                     }
 
                     prepareVPN();
+                    result.success(null);
                     break;
                 case "refresh":
                     updateVPNStages();
+                    result.success(null);
                     break;
                 case "refresh_status":
                     updateVPNStatus();
+                    result.success(null);
                     break;
                 case "stage":
                     result.success(OpenVPNService.getStatus());
@@ -189,7 +206,13 @@ public class MainActivity extends FlutterActivity {
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
                         Intent intent = new Intent(Settings.ACTION_VPN_SETTINGS);
                         startActivity(intent);
+                        result.success(null);
+                    } else {
+                        result.error("UNSUPPORTED", "Kill switch is not supported on this version", null);
                     }
+                    break;
+                default:
+                    result.notImplemented();
                     break;
             }
         });
@@ -204,10 +227,16 @@ public class MainActivity extends FlutterActivity {
                 ConfigParser configParser = new ConfigParser();
                 configParser.parseConfig(new StringReader(config));
                 vpnProfile = configParser.convertProfile();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
-            } catch (ConfigParser.ConfigParseError configParseError) {
-                configParseError.printStackTrace();
+                setStage("disconnected");
+                Toast.makeText(this, "Config Error: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            if (vpnProfile == null) {
+                setStage("disconnected");
+                return;
             }
 
             Intent vpnIntent = VpnService.prepare(this);
@@ -222,6 +251,11 @@ public class MainActivity extends FlutterActivity {
         try {
             setStage("connecting");
 
+            if (vpnProfile == null) {
+                setStage("disconnected");
+                return;
+            }
+
             if (vpnProfile.checkProfile(this) != de.blinkt.openvpn.R.string.no_error_found) {
                 throw new RemoteException(getString(vpnProfile.checkProfile(this)));
             }
@@ -229,8 +263,16 @@ public class MainActivity extends FlutterActivity {
             vpnProfile.mProfileCreator = getPackageName();
             vpnProfile.mUsername = username;
             vpnProfile.mPassword = password;
+            vpnProfile.mCheckRemoteCN = false; // Disable strict CN check for legacy/free servers
             vpnProfile.mDNS1 = dns1;
             vpnProfile.mDNS2 = dns2;
+
+            Log.d(TAG, "Starting VPN: " + name + " with IP check disabled");
+
+            // Ensure authentication type is set for User/Pass if credentials provided
+            if (username != null && !username.isEmpty()) {
+                vpnProfile.mAuthenticationType = VpnProfile.TYPE_USERPASS;
+            }
 
             if (dns1 != null && dns2 != null) {
                 vpnProfile.mOverrideDNS = true;
@@ -243,9 +285,10 @@ public class MainActivity extends FlutterActivity {
 
             ProfileManager.setTemporaryProfile(this, vpnProfile);
             VPNLaunchHelper.startOpenVpn(vpnProfile, this);
-        } catch (RemoteException e) {
+        } catch (Exception e) {
             setStage("disconnected");
             e.printStackTrace();
+            Toast.makeText(this, "Connection Error: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -286,12 +329,14 @@ public class MainActivity extends FlutterActivity {
                 if (vpnStageSink != null && attached) vpnStageSink.success("connected");
                 break;
             case "DISCONNECTED":
+            case "EXITING":
                 if (vpnStageSink != null && attached) vpnStageSink.success("disconnected");
                 break;
             case "WAIT":
                 if (vpnStageSink != null && attached) vpnStageSink.success("wait_connection");
                 break;
             case "AUTH":
+            case "AUTH_PENDING":
                 if (vpnStageSink != null && attached) vpnStageSink.success("authenticating");
                 break;
             case "RECONNECTING":
@@ -301,6 +346,11 @@ public class MainActivity extends FlutterActivity {
                 if (vpnStageSink != null && attached) vpnStageSink.success("no_connection");
                 break;
             case "CONNECTING":
+            case "RESOLVE":
+            case "TCP_CONNECT":
+            case "GET_CONFIG":
+            case "ASSIGN_IP":
+            case "ADD_ROUTES":
                 if (vpnStageSink != null && attached) vpnStageSink.success("connecting");
                 break;
             case "PREPARE":

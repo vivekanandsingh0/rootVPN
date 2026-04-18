@@ -28,9 +28,15 @@ public class VPNLaunchHelper {
 
     private static String writeMiniVPN(Context context) {
         String nativeAPI = NativeUtils.getNativeAPI();
-        /* Q does not allow executing binaries written in temp directory anymore */
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-            return new File(context.getApplicationInfo().nativeLibraryDir, "libovpnexec.so").getPath();
+        
+        // First try the native library directory (Most reliable on all modern Android versions)
+        File exec = new File(context.getApplicationInfo().nativeLibraryDir, "libovpnexec.so");
+        if (exec.exists()) return exec.getPath();
+        
+        exec = new File(context.getApplicationInfo().nativeLibraryDir, "libopenvpn.so");
+        if (exec.exists()) return exec.getPath();
+
+        // Fallback for older devices/special cases
         String[] abis;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
             abis = getSupportedABIsLollipop();
